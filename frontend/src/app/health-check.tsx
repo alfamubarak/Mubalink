@@ -23,8 +23,8 @@ export default function HealthCheck() {
   }, []);
 
   return (
-    <div className="rounded-lg border border-neutral-300 bg-white p-6 max-w-md">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+    <div className="max-w-md">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
         Backend health
       </h2>
 
