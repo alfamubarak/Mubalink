@@ -28,20 +28,32 @@ export class ApiError extends Error {
  * Fetch JSON from the backend and return it typed as `T`.
  *
  * - Sends `credentials: "include"` so the Sanctum HttpOnly cookie is sent.
+ * - Adds the `X-XSRF-TOKEN` header (read from the CSRF cookie) on writes.
  * - Throws `ApiError` (with the backend's `message`) on any non-2xx status.
  */
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+  const isWrite = !["GET", "HEAD", "OPTIONS"].includes(method);
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...((options.headers as Record<string, string>) ?? {}),
+  };
+
+  if (isWrite) {
+    const token = getXSRFToken();
+    if (token) headers["X-XSRF-TOKEN"] = token;
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
+    method,
     credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -57,4 +69,19 @@ export async function apiFetch<T>(
 
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+/** Read Laravel's `XSRF-TOKEN` cookie (URL-decoded, for the request header). */
+function getXSRFToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+/**
+ * Fetch the CSRF cookie from Sanctum. Must be called before any state-changing
+ * request (e.g. login) so Laravel can verify the `X-XSRF-TOKEN` header.
+ */
+export async function fetchCsrfCookie(): Promise<void> {
+  await fetch("/sanctum/csrf-cookie", { credentials: "include" });
 }

@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: "http://localhost:8000/api/:path*",
       },
+      // Sanctum's CSRF cookie endpoint (used before the login POST).
+      {
+        source: "/sanctum/:path*",
+        destination: "http://localhost:8000/sanctum/:path*",
+      },
     ];
   },
   cacheComponents: true,

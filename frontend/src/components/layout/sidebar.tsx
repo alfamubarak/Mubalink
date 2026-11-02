@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { NAV_ITEMS } from "@/lib/nav";
+import { useAuth } from "@/lib/auth/auth-context";
+import { Button } from "@/components/ui/button";
 
 /**
  * Dark sidebar. Client component: it reads the current pathname to highlight
- * the active nav item, which requires browser routing state.
+ * the active nav item, and exposes the current admin + logout.
  */
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-panel text-white">
@@ -45,8 +54,17 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-white/10 px-6 py-4 text-xs text-white/40">
-        v0.1 · milestone 2
+      <div className="border-t border-white/10 px-4 py-3">
+        <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+        <p className="truncate text-xs text-white/50">{user?.email}</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="mt-2 w-full justify-start px-0 text-white/70 hover:bg-transparent hover:text-white"
+        >
+          Sign out
+        </Button>
       </div>
     </aside>
   );

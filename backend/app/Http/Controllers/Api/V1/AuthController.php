@@ -36,8 +36,12 @@ class AuthController extends Controller
         }
 
         // Regenerate the session id so a pre-login session id cannot be
-        // reused against the now-authenticated session.
-        $request->session()->regenerate();
+        // reused against the now-authenticated session. Only when a session
+        // exists (stateful SPA requests); a non-stateful caller has nothing
+        // to regenerate.
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'data' => new UserResource($request->user()),
