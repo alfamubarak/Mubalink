@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\HealthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -11,16 +11,18 @@ use Illuminate\Support\Facades\Route;
 |
 | Every endpoint lives behind a `/v1` prefix so future breaking changes can
 | be introduced as `/v2` without disturbing existing clients.
-|
-| Route files themselves hold no business logic — they only map an HTTP
-| verb + path to a controller method (and, where needed, middleware).
 */
 
 Route::prefix('v1')->group(function () {
+    // Public health probe.
     Route::get('/health', HealthController::class);
 
-    // Authenticated example (kept for the upcoming auth milestone).
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    })->middleware('auth:sanctum');
+    // Authentication.
+    Route::post('/auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:login');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/logout', [AuthController::class, 'logout']);
+    });
 });
